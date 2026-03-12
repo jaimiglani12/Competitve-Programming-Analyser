@@ -230,12 +230,12 @@ def contest_analysis(handle):
     url = f"https://codeforces.com/api/user.rating?handle={handle}"
     response = requests.get(url)
     data = response.json()
-    contests = data["result"]
+    contests = data.get("result", [])
 
     if not contests:
         return {
             "handle": handle,
-            "message": "User has not participated in contests."
+            "message": "User has not participated in any rated contests yet."
         }
 
     total_contests = len(contests)
@@ -252,7 +252,6 @@ def contest_analysis(handle):
             delta = new_rating - old_rating
             rating.append(delta)
 
-    # Guard: if not enough contests for trend
     if not ranking:
         return {
             "handle": handle,
@@ -264,13 +263,10 @@ def contest_analysis(handle):
     avg_rank = sum(ranking) // total_contests
     rating_change = abs(ranking[0] - ranking[total_contests - 1])
 
-    # Default trend values
-    early_avg = 0
-    recent_avg = 0
     rating_trend = "Not enough data"
 
     if len(rating) >= 6:
-        mid = total_contests // 2
+        mid = len(rating) // 2
         early_rating = rating[0:mid]
         recent_rating = rating[mid:]
         early_avg = sum(early_rating) / len(early_rating) if early_rating else 0
@@ -279,7 +275,7 @@ def contest_analysis(handle):
         if recent_avg > early_avg:
             rating_trend = "Improving 📈"
         elif recent_avg == early_avg:
-            rating_trend = "Equal"
+            rating_trend = "Equal ➖"
         else:
             rating_trend = "Declining 📉"
 
